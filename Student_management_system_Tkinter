@@ -1,0 +1,390 @@
+from tkinter import *
+from datetime import date
+from tkinter import filedialog
+from tkinter import messagebox
+from PIL import Image, ImageTk
+import os
+from tkinter.ttk import Combobox
+from tkinter.ttk import Treeview
+import pathlib
+from tkinter import ttk
+import csv
+import pickle
+
+background = "#1a0d00"
+framebg = "#ff8000"
+framefg = "#ffcc99"
+
+student_data=[]
+
+def load_data():
+    try:
+        with open("student_data.pkl", "rb") as file:
+            data = pickle.load(file)
+            return data
+    except FileNotFoundError:
+        return []
+
+student_data = load_data()
+
+root=Tk()
+root.title("Student Management System - Lumanix Academy")
+#root.geometry("1300x700")
+root.resizable(False,False)
+root.config(bg=background)
+
+width=1300
+height=700
+aa=root.winfo_screenwidth()
+bb=root.winfo_screenheight()
+cc=int((aa/2)-(width/2))
+dd=int((bb/2)-(height/2))
+root.geometry(f"{width}x{height}+{(cc)}+{(dd)}")
+
+#gender
+def selection():
+    value=radio.get()
+    if value == 1:
+        gender = "Male"
+        
+    else:
+        gender="Female"
+
+treeview = None
+
+
+#add data
+def add_data():
+    registration_num = registration.get()
+    name_val = Name.get()
+    dob_val = dob.get()
+    gender_val = "Male" if radio.get() == 1 else "Female"
+    midterm_val = Midterm.get()
+    final_exam_val = final.get()
+    student_gpa_val = gpa.get()
+    father_name_val = FName.get()
+    father_occupation_val = FO.get()
+    mother_name_val = MName.get()
+    mother_occupation_val = MO.get()
+    father_address_val = addressf.get()
+    father_contact_val = cntctNo.get()
+    mother_address_val = addrs.get()
+    mother_contact_val = cntctNo1.get()
+
+    try:
+        midterm_val = int(midterm_val)
+        final_exam_val = int(final_exam_val)
+        student_gpa_val = float(student_gpa_val)  # Assuming GPA can be a float
+        cntctNo_val = int(father_contact_val)
+        cntctNo1_val = int(mother_contact_val)
+    except ValueError:
+        messagebox.showerror("Error", "Please enter valid integer/float values for Midterm, Final, GPA, and Contact No")
+        return
+
+    # Check if any required field is empty
+    if not (registration_num and name_val and dob_val and midterm_val and final_exam_val and student_gpa_val
+            and father_name_val and father_occupation_val and mother_name_val and mother_occupation_val
+            and father_address_val and father_contact_val and mother_address_val and mother_contact_val):
+
+        messagebox.showerror("Error", "Please fill in all the required fields.")
+        return
+    
+    student_data.append((registration_num,name_val,dob_val,gender_val,midterm_val,final_exam_val,student_gpa_val,father_name_val,father_occupation_val,mother_name_val,mother_occupation_val,father_address_val,father_contact_val,mother_address_val, mother_contact_val))
+    load_data()
+    display_data()
+    save_data()
+
+def delete_data():
+    
+    #global treeview
+    selected_item = treeview.selection()
+    if not selected_item:
+        messagebox.showerror("Error", "Please select an entry to delete.")
+    else:
+        response = messagebox.askyesno("Confirmation", "Are you sure you want to delete?")
+        if response == 1:
+            treeview.delete(selected_item)
+            # Assuming student_data is a list of tuples
+            index = int(selected_item[0][1:])
+            student_data.pop(index)
+            
+            display_data()
+            save_data()
+    
+
+#display data in a treeview
+def display_data():
+    global treeview
+    # Delete existing data in treeview
+    for item in treeview.get_children():
+        treeview.delete(item)
+    # Insert student_data into the treeview
+    for index, data in enumerate(student_data):
+        treeview.insert("", index, values=data)
+
+
+def update_data():
+    selected_item = treeview.focus()
+    if not selected_item:
+        messagebox.showerror("Error", "Please select an entry to update.")
+    else:
+               
+        updated_data = (
+            reg_entry.get(), name_entry.get(), DOB_entry.get(),
+            radio.get(), mid_entry.get(), final_entry.get(),
+            gpa_entry.get(), fname_entry.get(), FO_entry.get(),
+            mname_entry.get(), MO_entry.get(),addrs_entry.get(),addrsf_entry.get(),
+            no_entry.get(),no1_entry.get()
+        )
+
+        # Convert the numeric gender value to string
+        gender_value = "Male" if radio.get() == 1 else "Female"
+        updated_data = updated_data[:3] + (gender_value,) + updated_data[4:]
+
+#update selected item
+        treeview.item( selected_item, values=updated_data)
+
+        index = int(selected_item[0][1:])
+        student_data[index] = updated_data
+
+        # Display the updated gender value in the Entry widget
+        gender_value = "Male" if radio.get() == 1 else "Female"
+        treeview.set(selected_item, "Gender", gender_value)
+        load_data()
+        display_data()
+        save_data()
+
+def save_data():
+    with open("student_data.pkl", "wb") as file:
+        pickle.dump(student_data, file)
+    '''
+    global treeview
+    # Delete existing data in treeview
+    for item in treeview.get_children():
+        treeview.delete(item)
+    # Insert student_data into the treeview
+    for index, data in enumerate(student_data):
+        treeview.insert("", index, values=data)
+        '''
+def search_data():
+    reg_num_to_search = search.get()
+    for index, data in enumerate(student_data):
+        if data[0] == reg_num_to_search:
+            display_data_entry(index)
+            break
+    else:
+        messagebox.showinfo("Search Result", f"No data found for Registration Number {reg_num_to_search}")
+
+def display_data_entry(index):
+    reg_entry.delete(0, END)
+    reg_entry.insert(0, student_data[index][0])
+
+    Name.set(student_data[index][1])
+    dob.set(student_data[index][2])
+
+    gender = 1 if student_data[index][3] == "Male" else 2
+    radio.set(gender)
+
+    Midterm.set(student_data[index][4])
+    final.set(student_data[index][5])
+    gpa.set(student_data[index][6])
+
+    FName.set(student_data[index][7])
+    FO.set(student_data[index][8])
+    cntctNo.set(student_data[index][9])
+    addressf.set(student_data[index][10])
+    MName.set(student_data[index][11])
+    MO.set(student_data[index][12])
+    cntctNo1.set(student_data[index][13])
+    addrs.set(student_data[index][14])   
+
+def clear_entries():
+    reg_entry.delete(0, END)
+    Name.set("")
+    dob.set("")
+    radio.set(0)
+    Midterm.set("")
+    final.set("")
+    gpa.set("")
+    FName.set("")
+    FO.set("")
+    MName.set("")
+    MO.set("")
+    cntctNo1.set("")
+    cntctNo.set("")
+    addressf.set("")
+    addrs.set("")
+    search.set("")
+
+#top frames
+Label(root,text="Email:luminaxaca@gmail.com    Tel:0412598736",width=10,height=1,bg=framebg,anchor='e').grid(row=1, column=0,columnspan=4, sticky="nsew")
+Label(root,text="Student Registration - Luminax Academy",width=20,height=1,bg=framebg, fg='black',font='Impact 30 bold').grid(row=0, column=0, columnspan=4, sticky="nsew")
+
+
+
+#search box to update
+search = StringVar()
+search_entry = Entry(root, textvariable=search, width=20, bd=1, font="arial 12").grid(row=2, column=1, pady=5, padx=10,sticky='e')
+
+imageicon3=PhotoImage(file=r"E:\python\std mana\images\search.png")
+SrchBtn=Button(root,text="Search",compound=LEFT,image=imageicon3,width=123,bg='#ffd9b3',font="arial 8 bold",command=search_data)
+SrchBtn.grid(row=2, column=2, pady=5, padx=0, sticky='w')
+
+#image4=PhotoImage(file=r"E:\python\New folder\images\search1..png")
+#updateBtn=Button(root,image=image4, bg="#ffbf80")
+#updateBtn.grid(row=2, column=2, pady=5, sticky='w')
+
+
+
+#student details
+topic=LabelFrame(root,text="Student's Details",font="TimesNewRoman 14",bd=2,width=500,bg=framebg,fg="#000000",height=250,relief=GROOVE)
+topic.grid(row=3, column=0, pady=5, padx=30, ipadx=50, sticky="nsew", columnspan=2)
+
+#registration
+Label(topic,text="Registration Number :",font="TimesNewRoman 10",bg=framebg, fg="#000000").grid(row=1, column=0,padx=5, pady=20, sticky="e")
+
+lblName = Label(topic,text="Full Name :",font="TimesNewRoman 10",bg=framebg, fg="#000000")
+lblName.grid(row=2, column=0, padx=5, pady=15, sticky="e")
+lblDOB = Label(topic,text="Date of Birth :",font="TimesNewRoman 10",bg=framebg, fg="#000000")
+lblDOB.grid(row=3, column=0, padx=5, pady=15, sticky="e")
+lblGender = Label(topic,text="Gender :",font="TimesNewRoman 10",bg=framebg, fg="#000000")
+lblGender.grid(row=4, column=0, padx=5, pady=15, sticky="e")
+
+lblmid = Label(topic,text="Midterm :",font="TimesNewRoman 10",bg=framebg, fg="#000000")
+lblmid.grid(row=2, column=3, padx=10, pady=5, sticky="e")
+lblfnl = Label(topic,text="Final :",font="TimesNewRoman 10",bg=framebg, fg="#000000")
+lblfnl.grid(row=3, column=3, padx=10, pady=5, sticky="e")
+lblgpa = Label(topic,text="GPA :",font="TimesNewRoman 10",bg=framebg, fg="#000000")
+lblgpa.grid(row=4, column=3, padx=10, pady=5, sticky="e")
+
+registration=StringVar()
+reg_entry = Entry(topic,textvariable=registration,width=15,font="TimesNewRoman 10")
+reg_entry.grid(row=1, column=1, padx=10, pady=5, sticky="w")
+
+Name = StringVar()
+name_entry = Entry(topic,textvariable=Name,width=20,font="TimesNewRoman 10")
+name_entry.grid(row=2, column=1, padx=10, pady=5, sticky="w")
+
+dob = StringVar()
+DOB_entry = Entry(topic,textvariable=dob,width=20,font="TimesNewRoman 10")
+DOB_entry.grid(row=3, column=1, padx=10, pady=5, sticky="w")
+
+radio=IntVar()
+radioMale = Radiobutton(topic,text="Male",value=1,variable=radio,bg=framebg, fg="#000000")
+radioMale.grid(row=4, column=1, padx=10, pady=5, sticky="w")
+radioFeMale = Radiobutton(topic,text="Female",variable=radio, value=2, bg=framebg, fg="#000000")
+radioFeMale.grid(row=4, column=1, padx=5, pady=5, sticky="e")
+
+Midterm = StringVar()
+mid_entry = Entry(topic,textvariable=Midterm,width=20,font="TimesNewRoman 10")
+mid_entry.grid(row=2, column=4, padx=5, pady=5, sticky="w")               
+final = StringVar()
+final_entry = Entry(topic,textvariable=final,width=20,font="TimesNewRoman 10")
+final_entry.grid(row=3, column=4, padx=5, pady=5, sticky="w")
+gpa = StringVar()
+gpa_entry = Entry(topic,textvariable=gpa,width=20,font="TimesNewRoman 10")
+gpa_entry.grid(row=4, column=4, padx=5, pady=5, sticky="w")
+
+#parent's details
+topic1=LabelFrame(root,text="Parent's Details",font="TimesNewRoman 14",bd=2,width=500,bg=framebg,fg="#000000",height=150,relief=GROOVE)
+topic1.grid(row=3, column=2, pady=5, padx=10, sticky="nsew", columnspan=3)
+
+lblFName = Label(topic1,text="Father's Name :",font="TimesNewRoman 10",bg=framebg, fg="#000000")
+lblFName.grid(row=1, column=0, padx=20, pady=15, sticky="e")
+lblFO = Label(topic1,text="Occupation :",font="TimesNewRoman 10",bg=framebg, fg="#000000")
+lblFO.grid(row=2, column=0, padx=20, pady=15, sticky="e")
+contactno = Label(topic1,text="Contact No :",font="TimesNewRoman 10",bg=framebg, fg="#000000")
+contactno.grid(row=3, column=0, padx=20, pady=15, sticky="e")
+addressf = Label(topic1,text="Contact Adress :",font="TimesNewRoman 10",bg=framebg, fg="#000000")
+addressf.grid(row=4, column=0, padx=20, pady=15, sticky="e")
+
+FName = StringVar()
+fname_entry = Entry(topic1,textvariable=FName,width=20,font="TimesNewRoman 10")
+fname_entry.grid(row=1, column=1, padx=5, pady=5, sticky="w")
+
+FO = StringVar()
+FO_entry= Entry(topic1,textvariable=FO,width=20,font="TimesNewRoman 10")
+FO_entry.grid(row=2, column=1, padx=5, pady=5, sticky="w")
+
+cntctNo = StringVar()
+no_entry= Entry(topic1,textvariable=cntctNo,width=20,font="TimesNewRoman 10")
+no_entry.grid(row=3, column=1, padx=5, pady=5, sticky="w")
+
+addressf = StringVar()
+addrsf_entry = Entry(topic1,textvariable=addressf,width=20,font="TimesNewRoman 10")
+addrsf_entry.grid(row=4, column=1, padx=5, pady=5, sticky="w")
+
+lblMName = Label(topic1,text="Mother's Name :",font="TimesNewRoman 10",bg=framebg, fg="#000000")
+lblMName.grid(row=1, column=2, padx=10, pady=5, sticky="e")
+lblMO = Label(topic1,text="Occupation :",font="TimesNewRoman 10",bg=framebg, fg="#000000")
+lblMO.grid(row=2, column=2, padx=10, pady=5, sticky="e")
+contactno1 = Label(topic1,text="Contact No :",font="TimesNewRoman 10",bg=framebg, fg="#000000")
+contactno1.grid(row=3, column=2, padx=10, pady=5, sticky="e")
+address = Label(topic1,text="Contact Adress :",font="TimesNewRoman 10",bg=framebg, fg="#000000")
+address.grid(row=4, column=2, padx=10, pady=5, sticky="e")
+
+MName = StringVar()
+mname_entry = Entry(topic1,textvariable=MName,width=20,font="TimesNewRoman 10")
+mname_entry.grid(row=1, column=3, padx=5, pady=5, sticky="w")
+
+MO = StringVar()
+MO_entry = Entry(topic1,textvariable=MO,width=20,font="TimesNewRoman 10")
+MO_entry.grid(row=2, column=3, padx=5, pady=5, sticky="w")
+
+cntctNo1 = StringVar()
+no1_entry= Entry(topic1,textvariable=cntctNo1,width=20,font="TimesNewRoman 10")
+no1_entry.grid(row=3, column=3, padx=5, pady=5, sticky="w")
+
+addrs = StringVar()
+addrs_entry = Entry(topic1,textvariable=addrs,width=20,font="TimesNewRoman 10")
+addrs_entry.grid(row=4, column=3, padx=5, pady=5, sticky="w")
+
+# Buttons for actions
+addBtn = Button(root, text="Add Data", width=10, height=1, font="merriweather 12 bold", bg="white", command=add_data)
+addBtn.grid(row=5, column=0, pady=5, padx=5, sticky='w')
+
+deleteBtn = Button(root, text="Delete Data", width=10, height=1, font="merriweather 12 bold", bg="white", command=delete_data)
+deleteBtn.grid(row=5, column=1, pady=5, padx=2, sticky='w')
+
+clearBtn = Button(root, text="Clear Data", width=10, height=1, font="merriweather 12 bold", bg="white", command=clear_entries)
+clearBtn.grid(row=5, column=2, pady=5, padx=5, sticky='w')
+
+updateBtn = Button(root, text="Update Data", width=10, height=1, font="merriweather 12 bold", bg="white", command=update_data)
+updateBtn.grid(row=5, column=3, pady=5, padx=6, sticky='w')
+
+# Add a "Save Data" button
+save_btn = Button(root, text="Save Data", width=10, height=1, font="arial 12 bold", bg="white", command=save_data)
+save_btn.grid(row=5, column=4, pady=5, padx=1, sticky='w')
+
+# Create a treeview widget
+treeview = ttk.Treeview(root, columns=(
+    "Registration Number", "Name", "DOB", "Gender",
+    "Midterm", "Final Exam", "GPA",
+    "Father's Name", "Father's Occupation",
+    "Father's Contact NO","Father's Address",
+    "Mother's Name", "Mother's Occupation",
+    "Mother's Contact NO","Mother's Address"
+), show="headings")
+
+# Set column headings
+for col in ("Registration Number", "Name", "DOB", "Gender",
+            "Midterm", "Final Exam", "GPA",
+            "Father's Name", "Father's Occupation",
+            "Father's Contact NO","Father's Address",
+            "Mother's Name", "Mother's Occupation",
+            "Mother's Contact NO","Mother's Address"):
+    treeview.heading(col, text=col)
+
+style = ttk.Style(root)
+style.theme_use("clam") # use a theme that supports the fieldbackground option
+style.configure("Treeview", background="black", fieldbackground="black", foreground="white")
+
+# Align the treeview to the left
+treeview.grid(row=6, column=0, pady=1, padx=10, sticky="nsew", columnspan=4)
+
+
+for i in range(7):
+    root.grid_rowconfigure(i, weight=1)
+    root.grid_columnconfigure(i, weight=1)
+
+root.mainloop()
