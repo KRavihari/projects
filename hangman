@@ -1,0 +1,131 @@
+import random
+from random_word import RandomWords
+
+def get_random_word():
+    r = RandomWords()
+    return r.get_random_word().upper()
+
+def display_hangman(tries):
+    stages = [
+        """
+           --------
+           |      |
+           |      O
+           |     \\|/
+           |      |
+           |     / \\
+          ----
+        """,
+        """
+           --------
+           |      |
+           |      O
+           |     \\|/
+           |      |
+           |     / 
+          ----
+        """,
+        """
+           --------
+           |      |
+           |      O
+           |     \\|/
+           |      |
+           |      
+          ----
+        """,
+        """
+           --------
+           |      |
+           |      O
+           |     \\|/
+           |      
+           |     
+          ----
+        """,
+        """
+           --------
+           |      |
+           |      O
+           |     \\|
+           |      
+           |     
+          ----
+        """,
+        """
+           --------
+           |      |
+           |      O
+           |      |
+           |      
+           |     
+          ----
+        """,
+        """
+           --------
+           |      |
+           |      O
+           |    
+           |      
+           |     
+          ----
+        """,
+        """
+           --------
+           |      |
+           |      
+           |    
+           |      
+           |     
+          ----
+        """,
+        """
+           --------
+           |      
+           |      
+           |    
+           |      
+           |     
+          ----
+        """
+    ]
+    return stages[tries]
+
+def play_hangman():
+    word = get_random_word()
+    word_letters = set(word)
+    guessed_letters = set()
+    letters_guessed_word = set()
+    tries = 8
+
+    print("Welcome to Hangman!")
+    print(display_hangman(tries))
+    print(f"{' '.join(['_' for _ in word])}\n")
+
+    while tries > 0:
+        if word_letters == letters_guessed_word:
+            print(f"Congratulations! You've guessed the word : {word}")
+            break
+        
+        guess = input("Guess a letter: ").upper()
+
+        if guess in guessed_letters or guess in letters_guessed_word:
+            print(f"You've already guessed {guess}. Try again.")
+        elif guess in word_letters:
+            letters_guessed_word.add(guess)
+            print(f"Good job! {guess} is in the word.")
+        else: 
+            tries -= 1
+            guessed_letters.add(guess)
+            print(f"{guess} is not in the word. You have {tries} tries left.")
+        
+        word_display = [letter if letter in letters_guessed_word else '_' for letter in word]
+        print(display_hangman(tries))
+        print(f"{' '.join(word_display)}\n")
+   
+
+    if tries == 0 and word_letters != letters_guessed_word:
+        print(f"Sorry, you've run out of tries. The word was: {word}")
+
+if __name__ == "__main__":
+    play_hangman()
